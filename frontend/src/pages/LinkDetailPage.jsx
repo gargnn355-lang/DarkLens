@@ -122,12 +122,22 @@ const LinkDetailPage = () => {
         <div className="bg-slate-900/90 p-6 rounded-2xl shadow-2xl border border-slate-800">
           {link.screenshot_url && (
             <div className="mb-6 flex justify-center">
-              <img
-                src={link.screenshot_url}
-                alt={link.title || 'Screenshot'}
-                className="rounded-xl shadow-lg max-h-96 object-contain border border-slate-800 bg-slate-800"
-                style={{ maxWidth: '100%' }}
-              />
+              <div className="relative">
+                <img
+                  src={link.screenshot_url}
+                  alt={link.title || 'Screenshot'}
+                  className="rounded-xl shadow-lg max-h-96 object-contain border border-slate-800 bg-slate-800"
+                  style={{ maxWidth: '100%' }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    const errorDiv = e.target.nextSibling;
+                    if (errorDiv) errorDiv.style.display = 'flex';
+                  }}
+                />
+                <div className="hidden items-center justify-center w-full h-48 bg-slate-800 rounded-xl border border-slate-700 text-slate-500 text-sm">
+                  Screenshot failed to load from Filebase
+                </div>
+              </div>
             </div>
           )}
       <div className="flex justify-between items-start mb-4">

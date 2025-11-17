@@ -34,10 +34,45 @@ pip install -r requirements.txt
 ```
 
 ### 5. Set up your `.env` file
-Copy `.env.example` to `.env` and fill in your Supabase credentials:
+Create a `.env` file in the root directory with the following variables:
+
 ```bash
-cp .env.example .env
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
+
+# Filebase Configuration (for screenshot storage)
+# Get these from your Filebase account: https://filebase.com
+FILEBASE_ACCESS_KEY=your-filebase-access-key
+FILEBASE_SECRET_KEY=your-filebase-secret-key
+FILEBASE_BUCKET=screenshots
+FILEBASE_ENDPOINT=https://s3.filebase.com
+FILEBASE_REGION=us-east-1
+
+# Tor Configuration (optional)
+TOR_PORT=9052
 ```
+
+**Filebase Setup:**
+1. Create an account at [filebase.com](https://filebase.com)
+2. Create a bucket (e.g., "screenshots")
+3. Go to Settings → Access Keys to get your Access Key and Secret Key
+4. Add these credentials to your `.env` file
+5. Make sure your bucket has **Public Read Access** enabled (for screenshots to be viewable)
+
+**Migrating Existing Screenshots from Supabase to Filebase:**
+If you have existing screenshots in Supabase Storage that you want to migrate to Filebase:
+```bash
+# Preview what would be migrated (dry-run)
+npm run migrate-screenshots -- --dry-run
+
+# Actually migrate the screenshots
+npm run migrate-screenshots
+```
+This script will:
+- Download all screenshots from Supabase Storage
+- Upload them to Filebase
+- Update database records with new Filebase URLs
 
 ### 6. Install Firefox and geckodriver
 - Make sure Firefox is installed.

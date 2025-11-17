@@ -278,12 +278,15 @@ const SearchPage = () => {
                           alt={link.title || "Screenshot"}
                           className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-200"
                           loading="lazy"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className="flex items-center justify-center w-full h-full text-slate-500 text-xs">
-                          No Image
-                        </div>
-                      )}
+                      ) : null}
+                      <div className="flex items-center justify-center w-full h-full text-slate-500 text-xs" style={{ display: link.screenshot_url ? 'none' : 'flex' }}>
+                        {link.screenshot_url ? 'Image failed to load' : 'No Image'}
+                      </div>
                       <div className="absolute top-2 right-2 bg-slate-900/80 px-2 py-1 rounded text-xs text-slate-300 font-semibold shadow">
                         {link.risk_score || "N/A"}
                       </div>

@@ -5,6 +5,7 @@ const { Builder, By } = require('selenium-webdriver');
 const firefox = require('selenium-webdriver/firefox');
 const { supabase } = require('./supabaseClient');
 const { classifyRisk } = require('./utils/classifyRisk');
+const { uploadScreenshotToFilebase } = require('./utils/filebaseUpload');
 
 const KEYWORDS = [
   "drugs", "bitcoin", "crypto", "market", "carding", "hacking", "fraud", "phishing",
@@ -14,7 +15,7 @@ const KEYWORDS = [
 ];
 
 const MAX_DEPTH = 2; // Same as crawler.js
-const SCREENSHOT_BUCKET = 'screenshots';
+// Screenshot storage is now handled by Filebase (configured via environment variables)
 
 function extractTagsFromContent(content) {
   if (!content) return [];
@@ -52,19 +53,17 @@ async function crawlLink(driver, url, sourceUrl, depth = 0, visited = new Set())
     await driver.get(url);
     const title = await driver.getTitle();
     const pageSource = await driver.getPageSource();
-    // Take screenshot
+    // Take screenshot and upload to Filebase
     let screenshot_url = null;
     try {
       const screenshotBuffer = await driver.takeScreenshot();
       const fileName = `screenshot_${Date.now()}_${Math.floor(Math.random()*10000)}.png`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(SCREENSHOT_BUCKET)
-        .upload(fileName, Buffer.from(screenshotBuffer, 'base64'), {
-          contentType: 'image/png',
-        });
-      if (!uploadError && uploadData) {
-        const { data: publicUrlData } = supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl(fileName);
-        screenshot_url = publicUrlData.publicUrl;
+      
+      // Upload to Filebase instead of Supabase Storage
+      screenshot_url = await uploadScreenshotToFilebase(screenshotBuffer, fileName);
+      
+      if (!screenshot_url) {
+        console.error(`[WARN] Failed to upload screenshot for ${url} to Filebase`);
       }
     } catch (e) {
       console.error(`[WARN] Could not take/upload screenshot for ${url}:`, e.message);
