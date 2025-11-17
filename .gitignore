@@ -57,3 +57,7 @@ desktop.ini
 
 # Misc
 *.sqlite3 
+
+#files
+testFilebase.js
+testSupabase.js
