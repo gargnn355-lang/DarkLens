@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import { Link } from "react-router-dom";
+import { getFilebaseUrl } from "../utils/filebase";
 
 // Utility to get base .onion domain
 function getBaseOnionDomain(url) {
@@ -272,29 +273,38 @@ const SearchPage = () => {
                     className="block bg-slate-900 hover:bg-slate-800 rounded-lg border shadow-md overflow-hidden transition-all group border-slate-800 hover:border-indigo-600 focus:ring-2 focus:ring-indigo-500 h-full flex flex-col"
                   >
                     <div className="relative flex-1 bg-slate-800 flex items-center justify-center overflow-hidden min-h-[180px]">
-                      {link.screenshot_url ? (
+                    {link.screenshot_url ? (
+                      <div className="relative w-full h-full">
                         <img
-                          src={link.screenshot_url}
+                          src={getFilebaseUrl(link.screenshot_path || link.screenshot_url)}
                           alt={link.title || "Screenshot"}
                           className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-200"
                           loading="lazy"
                           onError={(e) => {
+                            console.error('Failed to load image:', e.target.src);
                             e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
+                            // Show error message
+                            const errorDiv = e.target.nextElementSibling;
+                            if (errorDiv) errorDiv.classList.remove('hidden');
                           }}
                         />
-                      ) : null}
-                      <div className="flex items-center justify-center w-full h-full text-slate-500 text-xs" style={{ display: link.screenshot_url ? 'none' : 'flex' }}>
-                        {link.screenshot_url ? 'Image failed to load' : 'No Image'}
+                        <div className="hidden absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-400 text-sm">
+                          <span>Image not available</span>
+                        </div>
                       </div>
-                      <div className="absolute top-2 right-2 bg-slate-900/80 px-2 py-1 rounded text-xs text-slate-300 font-semibold shadow">
-                        {link.risk_score || "N/A"}
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">
+                        No image available
                       </div>
-                      <div
-                        className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold shadow ${getStatusColor(link.status)}`}
-                      >
-                        {link.status || "Unknown"}
-                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 bg-slate-900/80 px-2 py-1 rounded text-xs text-slate-300 font-semibold shadow">
+                      {link.risk_score || "N/A"}
+                    </div>
+                    <div
+                      className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold shadow ${getStatusColor(link.status)}`}
+                    >
+                      {link.status || "Unknown"}
+                    </div>
                     </div>
                     <div className="p-3 flex flex-col">
                       <h3 className="text-sm font-bold text-indigo-300 truncate group-hover:text-indigo-400">

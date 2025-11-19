@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screenshot Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .screenshot-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .screenshot {
+            max-width: 100%;
+            max-height: 500px;
+            display: block;
+            margin: 10px 0;
+            border: 1px solid #eee;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #1976d2;
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 8px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📸 Screenshot Viewer</h1>
+    
+    <div class="controls">
+        <h3>View Screenshot</h3>
+        <div>
+            <input type="text" id="screenshotPath" placeholder="Enter screenshot path (e.g., screenshots/example.png)" value="screenshot_1763375671318_2063.png">
+            <button onclick="viewScreenshot()">View</button>
+        </div>
+    </div>
+    
+    <div id="status" class="info">Enter a screenshot path and click "View" to display the image.</div>
+    
+    <div id="screenshotContainer" class="screenshot-container" style="display: none;">
+        <h3>Screenshot: <span id="screenshotName">-</span></h3>
+        <div id="imageContainer">
+            <img id="screenshotImage" class="screenshot" alt="Screenshot">
+        </div>
+        <div id="screenshotInfo"></div>
+    </div>
+    
+    <script>
+        // Get values from environment variables or use defaults
+        const BUCKET_NAME = '<%= process.env.VITE_FILEBASE_BUCKET || "your-bucket-name" %>';
+        const S3_ENDPOINT = '<%= process.env.VITE_FILEBASE_ENDPOINT || "https://s3.filebase.com" %>';
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+            statusDiv.style.display = 'block';
+        }
+
+        function viewScreenshot() {
+            const screenshotPath = document.getElementById('screenshotPath').value.trim();
+            if (!screenshotPath) {
+                updateStatus('Please enter a screenshot path', 'error');
+                return;
+            }
+            
+            // Update UI
+            document.getElementById('screenshotName').textContent = screenshotPath;
+            document.getElementById('screenshotContainer').style.display = 'none';
+            updateStatus('Loading screenshot...', 'info');
+            
+            // Create the full URL to the screenshot
+            const screenshotUrl = `${S3_ENDPOINT}/${BUCKET_NAME}/${encodeURIComponent(screenshotPath)}`;
+            const imgElement = document.getElementById('screenshotImage');
+            
+            // Reset
+            imgElement.src = '';
+            document.getElementById('screenshotInfo').innerHTML = '';
+            
+            // Create a test image to check if it loads
+            const testImg = new Image();
+            testImg.onload = function() {
+                // If image loads successfully
+                imgElement.src = screenshotUrl;
+                document.getElementById('screenshotContainer').style.display = 'block';
+                updateStatus('✅ Screenshot loaded successfully!', 'info');
+                
+                // Display image info
+                const infoDiv = document.getElementById('screenshotInfo');
+                infoDiv.innerHTML = `
+                    <h4>Image Information:</h4>
+                    <p><strong>URL:</strong> <a href="${screenshotUrl}" target="_blank">View Full Size</a></p>
+                    <p><strong>Dimensions:</strong> ${testImg.width} × ${testImg.height} pixels</p>
+                    <p><strong>Size:</strong> Loading size information...</p>
+                `;
+                
+                // Get image size using fetch
+                fetch(screenshotUrl, { method: 'HEAD' })
+                    .then(response => {
+                        const size = response.headers.get('content-length');
+                        if (size) {
+                            const sizeKB = Math.round(size / 1024 * 100) / 100;
+                            const sizeMB = Math.round(size / (1024 * 1024) * 100) / 100;
+                            const sizeText = size < 1024 * 1024 ? 
+                                `${size} bytes (${sizeKB} KB)` : 
+                                `${size} bytes (${sizeMB} MB)`;
+                            
+                            document.querySelector('#screenshotInfo p:last-child')
+                                .innerHTML = `<strong>Size:</strong> ${sizeText}`;
+                        } else {
+                            document.querySelector('#screenshotInfo p:last-child')
+                                .innerHTML = '<strong>Size:</strong> Could not determine size';
+                        }
+                    })
+                    .catch(() => {
+                        document.querySelector('#screenshotInfo p:last-child')
+                            .innerHTML = '<strong>Size:</strong> Could not determine size';
+                    });
+            };
+            
+            testImg.onerror = function() {
+                updateStatus('❌ Failed to load screenshot. Check console for details.', 'error');
+                console.error('Failed to load screenshot. Possible issues:');
+                console.log('- Check if the image exists in the bucket');
+                console.log('- Verify CORS configuration on your S3 bucket');
+                console.log('- Check if the bucket policy allows public access');
+                console.log('- Verify the S3 endpoint and bucket name are correct');
+                console.log('Full URL:', screenshotUrl);
+            };
+            
+            // Start loading the image
+            testImg.src = screenshotUrl;
+        }
+        
+        // Allow pressing Enter in the input field to trigger the view
+        document.getElementById('screenshotPath').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                viewScreenshot();
+            }
+        });
+    </script>
+</body>
+</html>

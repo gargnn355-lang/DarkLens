@@ -230,7 +230,7 @@ async function crawlLink(driver, url, sourceUrl, depth = 0, visited = new Set(),
       const screenshotBuffer = await driver.takeScreenshot();
       const fileName = `screenshot_${Date.now()}_${Math.floor(Math.random()*10000)}.png`;
       
-      // Upload to Filebase instead of Supabase Storage
+      // Upload to Filebase
       screenshot_url = await uploadScreenshotToFilebase(screenshotBuffer, fileName);
       
       if (!screenshot_url) {

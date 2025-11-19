@@ -27,7 +27,7 @@ async function launchTorSelenium() {
   let options = new firefox.Options();
   options.setPreference('network.proxy.type', 1);
   options.setPreference('network.proxy.socks', '127.0.0.1');
-  options.setPreference('network.proxy.socks_port', 9050);
+  options.setPreference('network.proxy.socks_port', 9052);
   options.setPreference('network.proxy.socks_remote_dns', true);
   options.setPreference('network.dns.blockDotOnion', false);
   options.setPreference('network.dns.disableIPv6', true);
@@ -59,7 +59,7 @@ async function crawlLink(driver, url, sourceUrl, depth = 0, visited = new Set())
       const screenshotBuffer = await driver.takeScreenshot();
       const fileName = `screenshot_${Date.now()}_${Math.floor(Math.random()*10000)}.png`;
       
-      // Upload to Filebase instead of Supabase Storage
+      // Upload to Filebase
       screenshot_url = await uploadScreenshotToFilebase(screenshotBuffer, fileName);
       
       if (!screenshot_url) {
